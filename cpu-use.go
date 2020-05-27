@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"os"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
@@ -20,7 +21,16 @@ type Usage struct{
 }
 
 func main() {
-	err := shim.Start(new(SimpleChaincode))
+
+	server := &shim.ChaincodeServer{
+		CCID: os.Getenv("CHAINCODE_ID"),
+		Address: os.Getenv("CHAINCODE_SERVER_ADDRESS"),
+		CC: new(SimpleChaincode),
+		TLSProps: shim.TLSProperties{
+			Disabled: true,
+		},
+	}
+	err := server.Start()
 	if err != nil {
 		fmt.Println("Error starting chaincode server")
 	}

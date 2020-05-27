@@ -1,0 +1,6 @@
+chaincode.env
+connection.json
+metadata.json
+*.tar.gz
+*.tgz
+vendor/
