@@ -27,10 +27,20 @@ Env Variables
 -------------
 
 For the `Chaincode Server` we are using `env` Variables for that run
+Add `CHAINCODE_SERVER_ADDRESS` and `CHAINCODE_ID`
 
 .. code:: bash
 
     touch chaincode.env
+
+Example
+-------
+
+.. code:: bash
+    #Chaincode address
+    CHAINCODE_SERVER_ADDRESS=cpu-shim:7053
+    #ID
+    CHAINCODE_ID=cpu-use:...
 
 Docker
 ------
@@ -48,5 +58,5 @@ To build and run the chaincode
 
 ..code:: bash
 
-    docker run -it --rm --name cpu-shim --hostname cpu-shim --env-file chaincode.env --network=bridge ngp/cpu-shim
+    docker run -it --rm --name cpu-shim --hostname cpu-shim --env-file chaincode.env --network=bridge -p 7053:7053 ngp/cpu-shim
 
