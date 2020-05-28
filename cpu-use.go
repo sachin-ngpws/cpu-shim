@@ -107,7 +107,7 @@ func (c *SimpleChaincode) AddCpu(stub shim.ChaincodeStubInterface, args []string
 
 	usageVal := &Usage{
 		Time: time.Now(),
-		Cpu: make([]string,100,1000),
+		Cpu: make([]string,0,1000),
 	}
 
 	usageByte, err := json.Marshal(usageVal)
