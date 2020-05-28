@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 	"time"
 	"os"
@@ -66,8 +67,12 @@ func (c *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return c.init(stub,args)
 	case "AddCpu":
 		return c.AddCpu(stub,args)
+	case "AddUsage":
+		return c.AddUsage(stub,args)
 	case "GetUsage":
 		return c.GetUsage(stub,args)
+	case "GetHistory":
+		return c.GetHistory(stub,args)
 	default:
 		return shim.Error("Not a vaild function")	
 	}
@@ -143,3 +148,93 @@ func (c *SimpleChaincode) GetUsage(stub shim.ChaincodeStubInterface, args []stri
 	return shim.Success(usageGet)
 }
 
+// AddUsage to update the cpu asset
+func (c *SimpleChaincode) AddUsage(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 3 {
+		shim.Error("Incorrect number or arguments")
+	}
+
+	name := args[0]
+	key, err:= stub.CreateCompositeKey(name_space,[]string{name})
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	usageGet, err:= stub.GetState(key)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	} else if usageGet == nil {
+		return shim.Error("Empty asset")
+	}
+
+	var usageVal Usage
+
+	err = json.Unmarshal([]byte(usageGet), &usageVal)
+
+	usageVal.Cpu = append(usageVal.Cpu,args[1],args[2])
+
+	usageByte, err := json.Marshal(usageVal)
+	if err != nil{
+		return shim.Error(err.Error())
+	}
+
+	err = stub.PutState(key,usageByte)
+
+	if err != nil{
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(usageByte)
+}
+
+// GetHistory returns entire history of the asset
+func (c *SimpleChaincode) GetHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 1 {
+		shim.Error("Incorrect number or arguments")
+	}
+
+	name := args[0]
+	key, err:= stub.CreateCompositeKey(name_space,[]string{name})
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	resultsIterator, err := stub.GetHistoryForKey(key)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	defer resultsIterator.Close()
+
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+
+	arrayWritten := false
+
+	for resultsIterator.HasNext(){
+		response, err := resultsIterator.Next()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
+		if arrayWritten == true {
+			buffer.WriteString(",")
+		}
+		buffer.WriteString("{\"Value\":")
+		if response.IsDelete {
+			buffer.WriteString("Deleted")
+		} else {
+			buffer.WriteString(string(response.Value))
+		}
+		buffer.WriteString("}")
+
+		arrayWritten = true
+	}
+	buffer.WriteString("]")
+
+	fmt.Println("History is : "+buffer.String())
+
+	return shim.Success(buffer.Bytes())
+}
