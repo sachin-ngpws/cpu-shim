@@ -175,6 +175,8 @@ func (c *SimpleChaincode) AddUsage(stub shim.ChaincodeStubInterface, args []stri
 
 	usageVal.Cpu = append(usageVal.Cpu,args[1],args[2])
 
+	usageVal.Time = time.Now()
+
 	usageByte, err := json.Marshal(usageVal)
 	if err != nil{
 		return shim.Error(err.Error())
