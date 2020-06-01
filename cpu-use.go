@@ -29,7 +29,7 @@ func main() {
 	} else {
 		fmt.Println("ID : "+ccid)
 	}
-	add := os.Getenv("CHAINCODE_SERVER_ADDRESS")
+	add := os.Getenv("CHAINCODE_SERVER_ADDRESS")+":7053"
 	if add == "" {
 		fmt.Println("No Address assigned")
 	} else {

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-shim
+  labels:
+    chaincode: cpu-use 
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      chaincode: cpu-use
+  template:
+    metadata:
+      labels:
+        chaincode: cpu-use
+    spec:
+      containers:
+      - name: cpu-shim
+        image: gcr.io/ngp-intern-platform/cpu-shim-test:v1.1.1
+        command: [ "sh", "-c"]
+        args: ["while true; do echo $CHAINCODE_SERVER_ADDRESS $CHAINCODE_ID; sleep 10;done"]
+        ports:
+        - containerPort: 7053
+        env:
+          - name: CHAINCODE_SERVER_ADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: CHAINCODE_ID
+            value: cpu-use:a7713684708d4687bf5a95f6a3f5af07c896e98ce7ff3e4df7cee12111c1c0df
