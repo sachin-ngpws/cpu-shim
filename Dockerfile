@@ -13,4 +13,4 @@ RUN mv cpu /go/bin/
 RUN ls -al /go/bin
 
 EXPOSE 7053
-CMD ["cpu"]
+# CMD ["cpu"]

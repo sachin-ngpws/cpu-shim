@@ -16,9 +16,8 @@ spec:
     spec:
       containers:
       - name: cpu-shim
-        image: gcr.io/ngp-intern-platform/cpu-shim-test:v1.1.1
-        command: [ "sh", "-c"]
-        args: ["while true; do echo $CHAINCODE_SERVER_ADDRESS $CHAINCODE_ID; sleep 10;done"]
+        image: gcr.io/ngp-intern-platform/cpu-shim-test:v1.2.0
+        command: [ "cpu"]
         ports:
         - containerPort: 7053
         env:
