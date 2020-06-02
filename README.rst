@@ -53,10 +53,32 @@ To build and run the chaincode
 
     docker build -t ngp/cpu-shim .
 
+`PUSH`
+
+Push the docker image to a container registry
+
+Kubernetes
+----------
+
+`CONFIG`
+
+Config the kubectl to point to the cluster
 
 `RUN`
 
 ..code:: bash
+    
+    kubectl create -f deployment.yaml
 
-    docker run -it --rm --name cpu-shim --hostname cpu-shim --env-file chaincode.env --network=bridge -p 7053:7053 ngp/cpu-shim
+    kubectl create -f service.yaml
+
+
+`UPDATE`
+
+Install the chaincode with `Service External IP` and the update the deployment with `CHAINCODE_ID`
+
+..code:: bash
+
+    kubectl apply -f deployment.yaml
+
 
