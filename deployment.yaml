@@ -26,4 +26,4 @@ spec:
               fieldRef:
                 fieldPath: status.podIP
           - name: CHAINCODE_ID
-            value: cpu-use:a7713684708d4687bf5a95f6a3f5af07c896e98ce7ff3e4df7cee12111c1c0df
+            value: cpu-use:f3834fc9eca6f91c288c559f31fd0e727da91b92dc30ee1d9f7a793426696a41

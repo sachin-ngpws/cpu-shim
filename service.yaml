@@ -6,7 +6,6 @@ spec:
   selector:
     chaincode: cpu-use
   ports:
-    - protocol: TCP
-      port: 7053
+    - port: 7053
       targetPort: 7053
   type: LoadBalancer
