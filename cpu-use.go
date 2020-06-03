@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -9,14 +10,16 @@ import (
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 )
 
-type SimpleChaincode struct{	
+//SimpleChaincode is the artifact of teh chaincode
+type SimpleChaincode struct {
 }
 
-var name_space string = "org.cpu-use.Usage"
+var nameSpace string = "org.cpu-use.Usage"
 
-type Usage struct{
+//Usage is the asset
+type Usage struct {
 	Time time.Time
-	Cpu []string
+	CPU  []string
 }
 
 func main() {
@@ -36,38 +39,44 @@ func (c *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (c *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	fun, args := stub.GetFunctionAndParameters()
 
-	fmt.Println("Executing => "+fun)
+	fmt.Println("Executing => " + fun)
 
-	switch fun{
-	case "AddCpu":
-		return c.AddCpu(stub,args)
+	switch fun {
+	case "init":
+		return c.init(stub, args)
+	case "AddCPU":
+		return c.AddCPU(stub, args)
+	case "AddUsage":
+		return c.AddUsage(stub, args)
 	case "GetUsage":
-		return c.GetUsage(stub,args)
+		return c.GetUsage(stub, args)
+	case "GetHistory":
+		return c.GetHistory(stub, args)
 	default:
-		return shim.Error("Not a vaild function")	
+		return shim.Error("Not a vaild function")
 	}
 }
 
 // init just for instantiate
-func (c *SimpleChaincode) init(stub shim.ChaincodeStubInterface, args []string) pb.Response{
+func (c *SimpleChaincode) init(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	fmt.Println("DONE !!!")
 	return shim.Success(nil)
 }
 
-//AddCpu register a cpu
-func (c *SimpleChaincode) AddCpu(stub shim.ChaincodeStubInterface, args []string) pb.Response{
+//AddCPU register a CPU
+func (c *SimpleChaincode) AddCPU(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 1 {
 		shim.Error("Incorrect number or arguments")
 	}
 
 	name := args[0]
-	key, err:= stub.CreateCompositeKey(name_space,[]string{name})
+	key, err := stub.CreateCompositeKey(nameSpace, []string{name})
 
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	usageGet, err:= stub.GetState(key)
+	usageGet, err := stub.GetState(key)
 
 	if err != nil {
 		return shim.Error(err.Error())
@@ -77,17 +86,17 @@ func (c *SimpleChaincode) AddCpu(stub shim.ChaincodeStubInterface, args []string
 
 	usageVal := &Usage{
 		Time: time.Now(),
-		Cpu: make([]string,100,1000),
+		CPU:  make([]string, 0, 1000),
 	}
 
 	usageByte, err := json.Marshal(usageVal)
-	if err != nil{
+	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	err = stub.PutState(key,usageByte)
+	err = stub.PutState(key, usageByte)
 
-	if err != nil{
+	if err != nil {
 		return shim.Error(err.Error())
 	}
 
@@ -101,13 +110,13 @@ func (c *SimpleChaincode) GetUsage(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	name := args[0]
-	key, err:= stub.CreateCompositeKey(name_space,[]string{name})
+	key, err := stub.CreateCompositeKey(nameSpace, []string{name})
 
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	usageGet, err:= stub.GetState(key)
+	usageGet, err := stub.GetState(key)
 
 	if err != nil {
 		return shim.Error(err.Error())
@@ -116,4 +125,97 @@ func (c *SimpleChaincode) GetUsage(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	return shim.Success(usageGet)
+}
+
+// AddUsage to update the CPU asset
+func (c *SimpleChaincode) AddUsage(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 3 {
+		shim.Error("Incorrect number or arguments")
+	}
+
+	name := args[0]
+	key, err := stub.CreateCompositeKey(nameSpace, []string{name})
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	usageGet, err := stub.GetState(key)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	} else if usageGet == nil {
+		return shim.Error("Empty asset")
+	}
+
+	var usageVal Usage
+
+	err = json.Unmarshal([]byte(usageGet), &usageVal)
+
+	usageVal.CPU = append(usageVal.CPU, args[1], args[2])
+
+	usageVal.Time = time.Now()
+
+	usageByte, err := json.Marshal(usageVal)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	err = stub.PutState(key, usageByte)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(usageByte)
+}
+
+// GetHistory returns entire history of the asset
+func (c *SimpleChaincode) GetHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 1 {
+		shim.Error("Incorrect number or arguments")
+	}
+
+	name := args[0]
+	key, err := stub.CreateCompositeKey(nameSpace, []string{name})
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	resultsIterator, err := stub.GetHistoryForKey(key)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	defer resultsIterator.Close()
+
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+
+	arrayWritten := false
+
+	for resultsIterator.HasNext() {
+		response, err := resultsIterator.Next()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
+		if arrayWritten == true {
+			buffer.WriteString(",")
+		}
+		buffer.WriteString("{\"Value\":")
+		if response.IsDelete {
+			buffer.WriteString("Deleted")
+		} else {
+			buffer.WriteString(string(response.Value))
+		}
+		buffer.WriteString("}")
+
+		arrayWritten = true
+	}
+	buffer.WriteString("]")
+
+	fmt.Println("History is : " + buffer.String())
+
+	return shim.Success(buffer.Bytes())
 }
