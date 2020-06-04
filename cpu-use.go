@@ -152,6 +152,10 @@ func (c *SimpleChaincode) AddUsage(stub shim.ChaincodeStubInterface, args []stri
 
 	err = json.Unmarshal([]byte(usageGet), &usageVal)
 
+	if err != nil{
+		shim.Error("marshling err : "+err.Error())
+	}
+
 	usageVal.CPU = append(usageVal.CPU, args[1], args[2])
 
 	usageVal.Time = time.Now()
@@ -181,6 +185,14 @@ func (c *SimpleChaincode) GetHistory(stub shim.ChaincodeStubInterface, args []st
 
 	if err != nil {
 		return shim.Error(err.Error())
+	}
+
+	usageGet, err := stub.GetState(key)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	} else if usageGet == nil {
+		return shim.Error("Empty asset")
 	}
 
 	resultsIterator, err := stub.GetHistoryForKey(key)
