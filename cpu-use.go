@@ -156,7 +156,7 @@ func (c *SimpleChaincode) AddUsage(stub shim.ChaincodeStubInterface, args []stri
 		shim.Error("marshling err : "+err.Error())
 	}
 
-	usageVal.CPU = append(usageVal.CPU, args[1], args[2])
+	usageVal.CPU = []string{args[1], args[2]}
 
 	usageVal.Time = time.Now()
 
